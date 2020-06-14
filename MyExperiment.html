@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="./package/css/drag.css">
+  <style>
+    *{
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="drag">
+    <div class="drag-child"></div>
+    <div class="drag-child1"></div>
+    <div class="ruler">
+      <div class="drag-ruler-top"></div>
+      <div class="drag-ruler-left"></div>
+    </div>
+    <div class="drag-curtain"></div>
+    <button class="drag-btn">开启拖拽</button>
+  </div>
+  <script src="./package/js/drag1.1.js"></script>
+  <script>
+    var drag = new Drag('#drag',{
+      button: ".drag-btn",
+      magic: [
+        {el: ".drag-child",  collision: true},
+        {el: ".drag-child1", collision: true}
+      ],
+      edit: true,
+      curtain: '.drag-curtain',
+      ruler: {
+        top: '.drag-ruler-top',
+        left: '.drag-ruler-left'
+      }
+    })
+  </script>
+</body>
+</html>

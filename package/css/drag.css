@@ -1,0 +1,85 @@
+.drag-child {
+  position: absolute;
+  left: 500px;
+  width: 100px;
+  height: 100px;
+  background: #F7C242;
+  z-index: 3000;
+}
+.drag-child-dashed {
+  box-sizing: border-box;
+  cursor: move;
+  border: 1px dashed black;
+}
+.binZindex {
+  position: absolute;
+  z-index: 2000;
+}
+.openCurtain {
+  position: fixed;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100vh !important;
+  width: 100% !important;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  box-sizing: border-box;
+  border-top: 3px solid #4affff;
+  border-left: 3px solid #4affff;
+}
+.attach_left {
+  left: 0 !important;
+  margin-left: 0 !important;
+}
+.transition {
+  transition: all 1s;
+}
+.drag-btn {
+  z-index: 4000;
+}
+.drag-ruler-top {
+  width: 100%;
+  height: 2px;
+  background: #4affff;
+  z-index: 2000;
+  position: absolute;
+  top: 0;
+  cursor: n-resize;
+}
+.drag-ruler-left {
+  width: 2px;
+  height: 100vh;
+  background: #4affff;
+  z-index: 2000;
+  position: absolute;
+  left: 0;
+  cursor: w-resize;
+}
+.scaleIcon {
+  z-index: 3000;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.scaleIcon::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+.drag-child1 {
+  position: absolute;
+  left: 100px;
+  top: 50px;
+  width: 200px;
+  height: 200px;
+  background: #F7C242;
+  z-index: 3000;
+}
