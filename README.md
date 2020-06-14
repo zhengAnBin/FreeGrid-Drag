@@ -1,10 +1,10 @@
 # Free and Grid Drag
 
-### 造一个拽拽的轮子！
+#### 造拽拽的轮子
 
-在git上也看到了几个拖拽的开源项目，基本上是拖拽 + 栅格布局，看源代码困难，所以放弃，决定从头到尾自己弄一个（这可能更快）。在参考了他们的一些做法之后，加上Photoshop中的标尺功能，分两个模式“Free mode”，“Grid mode”，于是开始“另起炉灶”，取名"Free and Grid Drag"（自由的和网格的 拖拽）
+在参考了其他Drag组件库的一些做法之后，加上Photoshop中的标尺功能，分两个模式“Free mode”，“Grid mode”，另起炉灶，取名"Free and Grid Drag"（自由的和网格的 拖拽）
 
-### Free mode
+#### Free mode
 
 - [x] 缩放
 - [x] 拖拽
@@ -13,7 +13,7 @@
 - [x] 静态
 - [ ] 碰撞
 
-### Grid mode
+#### Grid mode
 
 - [ ] 缩放
 - [ ] 拖拽
