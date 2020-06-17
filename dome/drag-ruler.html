@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="../package/css/drag.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    .box1 {
+      width: 100px;
+      height: 100px;
+      background: #AF9794;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 0;
+    }
+    .box2 {
+      width: 100px;
+      height: 100px;
+      background: #874D45;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 120px;
+    }
+    .box3 {
+      width: 100px;
+      height: 100px;
+      background: #C16B6A;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 240px;
+    }
+    .box4 {
+      width: 100px;
+      height: 100px;
+      background: #EEA9A9;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 360px;
+    }
+    .box5 {
+      width: 100px;
+      height: 100px;
+      background: #CB1B45;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 480px;
+    }
+    #drag{
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      text-align: center;
+      font-size: 25px;
+    }
+    #drag::selection {  background:#fff; }
+  </style>
+</head>
+
+<body>
+  <div id="drag">
+    <div class="magicBox">
+      如果你希望盒子排布整齐，你可以使用标尺工具
+      <div class="drag-child1 box1">D</div>
+      <div class="drag-child2 box2">R</div>
+      <div class="drag-child3 box3">A</div>
+      <div class="drag-child4 box4">G</div>
+      <div class="drag-child5 box5">!</div>
+    </div>
+    <div class="ruler">
+      <!-- 标尺最好统一放置在一个标签里，这样有利于标签结构整齐 -->
+      <div class="drag-ruler-top"></div>
+      <div class="drag-ruler-left"></div>
+    </div>
+  </div>
+  <script src="../package/js/drag1.1.js"></script>
+  <script>
+    var drag = new Drag('#drag', {
+      magic: [
+        { el: ".drag-child1" },
+        { el: ".drag-child2" },
+        { el: ".drag-child3" },
+        { el: ".drag-child4" },
+        { el: ".drag-child5" }
+      ],
+      // 你可以只选择其中一根标尺 例如：{ top: '.drag-ruler-top' }
+      ruler: {
+        top: '.drag-ruler-top',
+        left: '.drag-ruler-left'
+      }
+    })
+  </script>
+</body>
+
+</html>

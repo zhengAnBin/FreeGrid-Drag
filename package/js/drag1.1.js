@@ -7,8 +7,6 @@
   if (!window) return;
   var doc = document;
   var win = window;
-  // 当前正在操作的DOM元素
-  var Dom8 = function () { };
   // 选择器
   function $(selector) {
     var arr = [];
@@ -58,10 +56,9 @@
   }
   $.fn = Object.create(null);
   function hasClass(obj, cls) {
-    if (obj.className.indexOf(cls) > -1) {
-      return true;
-    }
-    return false;
+    cls = cls || '';
+    if (cls.replace(/\s/g, '').length == 0) return false;
+    return new RegExp(' ' + cls + ' ').test(' ' + obj.className + ' ');
   }
   function addClass(obj, cls) {
     if (!this.hasClass(obj, cls)) {
@@ -184,8 +181,10 @@
   var Event = {
     listener: function (elName, cb) {
       var _this = this;
-      if (!_this.elName) {
-        _this[elName] = cb;
+      if (Utils.type(_this[elName]) === "array") {
+        _this[elName].push(cb);
+      } else {
+        _this[elName] = [cb];
       }
     },
     remove: function () {
@@ -204,7 +203,13 @@
   };
   // 发布
   var emit = function (params) {
-    return Event[params]();
+    var len = Event[params].length,
+      i = 0;
+    for (; i < len; i++) {
+      if (Utils.type(Event[params][i]) === "function") {
+        Event[params][i]();
+      }
+    }
   };
   // 存放 ruler 标尺中的一些位置信息
   var rulerLayout = {
@@ -217,13 +222,11 @@
       var obj = rulerLayout.ruler;
       Object.keys(obj).forEach(function (key) {
         obj[key].parentEl.removeChild(obj[key].el);
-        obj.delete(key);
+        delete obj[key];
       });
     }
   };
-  var magicLayout = {
-    magic:[]
-  };
+  var magicLayout = {};
   function magicMode(e) {
     var target = this.target;
     var _this = this;
@@ -232,21 +235,44 @@
       return;
     }
     // 标志为正在运动对象
-    var key = target.getAttribute("date-key");
-    magicLayout[key]["moving"] = true;
 
     var obj = {
       winHeight: _this.winHeight,
       winWidth: _this.winWidth,
       target,
-      key,
       disY: e.pageY - target.offsetTop,
       disX: e.pageX - target.offsetLeft
     };
-    
+
+    var key = target.getAttribute("date-key");
+    if (key) {
+      obj['key'] = key;
+      magicLayout[key].moving = true;
+    }
+
     var start = Utils.throttle(handlers.magicMoveHandler.bind(_this,obj), 18);
-    var end = handlers.magicMoveEnd.bind(_this,target);
+    var end = null;
+    if(_this.params.ruler){
+      end = handlers.magicMoveEnd.bind(_this, target);
+    }
     return { start , end };
+  }
+  function scaleMode() {
+    var _this = this;
+    var target = _this.target;
+
+    var parentEl = target.parentNode;
+    if (parentEl.getAttribute("date-state") === "static") {
+      return;
+    }
+    var obj = {
+      parentEl,
+      viewWidth: doc.body.clientWidth,
+      disX: parentEl.offsetLeft,
+      disY: parentEl.offsetTop,
+    };
+    var start = Utils.throttle(handlers.scaleModeHandler.bind(_this, obj), 18);
+    return { start, end: null };
   }
   function rulerMode() {
     var _this = this, obj;
@@ -282,23 +308,6 @@
     var end = handlers.rulerMoveEnd.bind( _this , node , obj);
     return { start , end };
   }
-  function scaleMode() {
-    var _this = this;
-    var target = _this.target;
-
-    var parentEl = target.parentNode;
-    if (parentEl.getAttribute("date-state") === "static") {
-      return;
-    }
-    var obj = {
-      parentEl,
-      viewWidth: doc.body.clientWidth,
-      disX: parseInt(win.getComputedStyle(parentEl)["left"]),
-      disY: parseInt(win.getComputedStyle(parentEl)["top"]),
-    };
-    var start = Utils.throttle(handlers.scaleModeHandler.bind(_this, obj), 18);
-    return { start , end : null };
-  }
   var onMoveStrategy = {
     magicMode,
     rulerMode,
@@ -308,41 +317,39 @@
     obj.target.style.left = e.pageX - obj.disX + "px";
     obj.target.style.top = e.pageY - obj.disY + "px";
 
-    var nowData = {
-      N: obj.target.offsetTop,
-      S: obj.winHeight - obj.target.offsetTop,
-      W: obj.target.offsetLeft,
-      E: obj.winHeight - obj.target.offsetLeft
-    };
-    var before = magicLayout[obj.key];
-    if (before.N > nowData.N, before.S < nowData.S) {
-      console.log("N");
+    if (obj.key) {
+      var N = obj.target.offsetTop;
+      var S = obj.winHeight - (obj.target.offsetTop + obj.target.offsetHeight);
+      var W = obj.target.offsetLeft;
+      var E = obj.winWidth - (obj.target.offsetLeft + obj.target.offsetWidth);
+      var nowData = { N, S, W, E };
+      var before = magicLayout[obj.key];
+      if (before.N > nowData.N && before.S < nowData.S) {
+        DirectionOfMotion["N"].call(this, nowData, obj);
+      }
+      if (before.S > nowData.S && before.N < nowData.N) {
+        DirectionOfMotion["S"].call(this, nowData, obj);
+      }
+      if (before.E > nowData.E && before.W < nowData.W) {
+        DirectionOfMotion["E"].call(this, nowData, obj);
+      }
+      if (before.W > nowData.W && before.E < nowData.E) {
+        DirectionOfMotion["W"].call(this, nowData, obj);
+      }
+      // 更新magic的位置信息
+      magicLayout[obj.key].N = N;
+      magicLayout[obj.key].S = S;
+      magicLayout[obj.key].W = W;
+      magicLayout[obj.key].E = E;
     }
-    if (before.S > nowData.S && before.N < nowData.N) {
-      console.log("S");
-    }
-    if (before.W > nowData.W && before.E < nowData.E) {
-      console.log("W");
-    }
-    if (before.E > nowData.E && before.W < nowData.W) {
-      console.log("E");
-    }
-    // Object.keys(magicLayout).forEach(function (key) {
-    // })
-    // for (let i = 0; i < arr.length; i++) {
-    //   // 触碰到元素的规则
-    //   if (!(r1 < arr[i].l || l1 > arr[i].r || b1 < arr[i].t || t1 > arr[i].b)) {
-    //     arr[i].el.style.top = arr[i].el.offsetHeight + 1 + e.pageY - disY + "px"
-    //     arr[i].el.style.left = arr[i].el.offsetWidth + 1 + e.pageX - disX + "px"
-    //   }
-    // }
-    Utils.extend(magicLayout[obj.key], nowData);
   }
   function magicMoveEnd( target ) {
     var _this = this;
     var message = rulerLayout.ruler,
       targetY = target.offsetTop,
       targetX = target.offsetLeft,
+      height = target.offsetHeight,
+      width = target.offsetWidth,
       topValue = 0,
       leftValue = 0,
       topSubVal = null,
@@ -350,45 +357,58 @@
       topDouble = 0,
       leftDouble = 0;
     // 循环比较，生产最小值
-    Object.keys(message).forEach(function (key) {
-      if (message[key].mark === "Top") {
-        topValue = targetY - message[key].positionY;
-        if (topValue <= 15 && topValue >= -8) {
-          if (!topDouble) {
-            topDouble = topValue;
-            topSubVal = message[key].positionY;
-          } else {
-            if (topDouble > Math.abs(topValue)) {
+    if(_this.params.ruler){
+      Object.keys(message).forEach(function (key) {
+        if (message[key].mark === "Top") {
+          topValue = targetY - message[key].positionY;
+          if (topValue <= 15 && topValue >= -8) {
+            if (!topDouble) {
               topDouble = topValue;
-              topSubVal = topDouble;
+              topSubVal = message[key].positionY;
+            } else {
+              if (topDouble > Math.abs(topValue)) {
+                topDouble = topValue;
+                topSubVal = topDouble;
+              }
             }
           }
         }
-      }
-      if (message[key].mark === "Left") {
-        leftValue = targetX - message[key].positionX;
-        if (leftValue <= 15 && leftValue >= -8) {
-          if (!leftDouble) {
-            leftDouble = leftValue;
-            leftSubVal = message[key].positionX;
-          } else {
-            if (leftDouble > Math.abs(leftValue)) {
+        if (message[key].mark === "Left") {
+          leftValue = targetX - message[key].positionX;
+          if (leftValue <= 15 && leftValue >= -8) {
+            if (!leftDouble) {
               leftDouble = leftValue;
-              leftSubVal = leftDouble;
+              leftSubVal = message[key].positionX;
+            } else {
+              if (leftDouble > Math.abs(leftValue)) {
+                leftDouble = leftValue;
+                leftSubVal = leftDouble;
+              }
             }
           }
         }
+      });
+      
+      // 产生最小值时，触发贴附
+      if (topSubVal && !leftSubVal) {
+        _this.updateAttach(target, "triggerTop", { topSubVal });
       }
-    });
-    // 产生最小值时，触发贴附
-    if (topSubVal && !leftSubVal) {
-      _this.updateAttach(target, "triggerTop", { topSubVal });
+      
+      if (!topSubVal && leftSubVal) {
+        
+        _this.updateAttach(target, "triggerLeft", { leftSubVal });
+      }
+      if (topSubVal && leftSubVal) {
+        _this.updateAttach(target, "together", { topSubVal, leftSubVal });
+      }
     }
-    if (!topSubVal && leftSubVal) {
-      _this.updateAttach(target, "triggerLeft", { leftSubVal });
-    }
-    if (topSubVal && leftSubVal) {
-      _this.updateAttach(target, "together", { topSubVal, leftSubVal });
+    var key = target.getAttribute("date-key");
+    if(key) {
+      magicLayout[key]["E"] = _this.winWidth - (targetX + height);
+      magicLayout[key]["S"] = _this.winHeight - (targetY + width);
+      magicLayout[key]["W"] = targetX;
+      magicLayout[key]["N"] = targetY;
+      magicLayout[key]["moving"] = false;
     }
   }
   function rulerMoveHandler( obj , e) {
@@ -405,9 +425,8 @@
       attrSub = obj.rulerAttr,
       key = target.getAttribute("date-key"),
       parent = target.parentNode,
-      getStyle = win.getComputedStyle,
-      y = parseInt(getStyle(target)["top"]),
-      x = parseInt(getStyle(target)["left"]);
+      y = target.offsetTop,
+      x = target.offsetLeft;
     if (dri === "top" && attrSub === "clone" && y <= 10) {
       parent.removeChild(target);
       rulerLayout.remove(key);
@@ -440,14 +459,85 @@
     rulerMoveEnd,
     scaleModeHandler
   };
+  var DirectionOfMotion = {
+    N: function (nowData, obj) {
+      Object.keys(magicLayout).forEach(function (key) {
+        // 触碰到元素的规则
+        if (magicLayout[key].moving) return;
+        var magic = magicLayout[key];
+        if (nowData.N - (magic.N + magic.el.offsetHeight) > -magic.el.offsetHeight
+          && nowData.N - (magic.N + magic.el.offsetHeight) < 4
+          && nowData.W - (magic.W + magic.el.offsetWidth) <= 0
+          && nowData.W - (magic.W + magic.el.offsetWidth) > -(magic.el.offsetWidth + obj.target.offsetWidth)) {
+          magic.el.style.top = magic.el.offsetTop - 2 + "px";
+          magic.N = magic.el.offsetTop;
+          magic.S = obj.winHeight - (magic.el.offsetTop + magic.el.offsetHeight);
+          magic.W = magic.el.offsetLeft;
+          magic.E = obj.winWidth - (magic.el.offsetLeft + magic.el.offsetWidth);
+        }
+      });
+    },
+    S: function (nowData, obj) {
+      Object.keys(magicLayout).forEach(function (key) {
+        // 触碰到元素的规则
+        if (magicLayout[key].moving) return;
+        var magic = magicLayout[key];
+
+        if (nowData.S - (magic.S + magic.el.offsetHeight) >= -magic.el.offsetHeight
+          && nowData.S - (magic.S + magic.el.offsetHeight) <= 4
+          && nowData.W - (magic.W + magic.el.offsetWidth) <= 0
+          && nowData.W - (magic.W + magic.el.offsetWidth) >= -(magic.el.offsetWidth + obj.target.offsetWidth)) {
+          magic.el.style.top = obj.target.offsetTop + obj.target.offsetHeight + 2 + "px";
+          magic.N = magic.el.offsetTop;
+          magic.S = obj.winHeight - (magic.el.offsetTop + magic.el.offsetHeight);
+          magic.W = magic.el.offsetLeft;
+          magic.E = obj.winWidth - (magic.el.offsetLeft + magic.el.offsetWidth);
+        }
+      });
+    },
+    W: function (nowData, obj) {
+      Object.keys(magicLayout).forEach(function (key) {
+        // 触碰到元素的规则
+        if (magicLayout[key].moving) return;
+        var magic = magicLayout[key];
+        if (nowData.W - (magic.W + magic.el.offsetWidth) < 4
+          && nowData.W - (magic.W + magic.el.offsetWidth) > -magic.el.offsetWidth
+          && nowData.N - (magic.N + magic.el.offsetHeight) < 0
+          && nowData.N - (magic.N + magic.el.offsetHeight) > -(obj.target.offsetHeight + magic.el.offsetHeight)) {
+          magic.el.style.left = obj.target.offsetLeft - magic.el.offsetWidth - 2 + "px";
+          magic.N = magic.el.offsetTop;
+          magic.S = obj.winHeight - (magic.el.offsetTop + magic.el.offsetHeight);
+          magic.W = magic.el.offsetLeft;
+          magic.E = obj.winWidth - (magic.el.offsetLeft + magic.el.offsetWidth);
+        }
+      });
+    },
+    E: function (nowData, obj) {
+      Object.keys(magicLayout).forEach(function (key) {
+        // 触碰到元素的规则
+        if (magicLayout[key].moving) return;
+        var magic = magicLayout[key];
+        if (nowData.E - (magic.E + magic.el.offsetWidth) <= 4
+          && nowData.E - (magic.E + magic.el.offsetWidth) >= -magic.el.offsetWidth
+          && nowData.N - (magic.N + magic.el.offsetHeight) <= 0
+          && nowData.N - (magic.N + magic.el.offsetHeight) >= -(magic.el.offsetHeight + obj.target.offsetHeight)) {
+          magic.el.style.left = obj.target.offsetLeft + obj.target.offsetWidth + 2 + "px";
+          magic.N = magic.el.offsetTop;
+          magic.S = obj.winHeight - (magic.el.offsetTop + magic.el.offsetHeight);
+          magic.W = magic.el.offsetLeft;
+          magic.E = obj.winWidth - (magic.el.offsetLeft + magic.el.offsetWidth);
+        }
+      });
+    }
+  };
   // 提供外面访问的对象
   var DragClass = function () { /** null */ };
   DragClass.prototype.downProxy = function (e) {
     var _this = this,            // Drag
-      upFn = null,
-      target = e.target,
-      attr = target.getAttribute("date-mode");  // 事件源date-mode属性
-    _this.target = target;
+        upFn = null,
+        target = e.target,
+        attr = target.getAttribute("date-mode");  // 事件源date-mode属性
+        _this.target = target;
     // 当鼠标在$DragEl中按下之后
     // 事件会传递到子元素上  target
     // 根据 target 上的 data-mode ，即它是属于哪一种处理模式
@@ -458,8 +548,8 @@
     if (!onMoveStrategy[attr]){ return; }     
     var ObjFn = onMoveStrategy[attr].call(_this,e);
     upFn = function (e) {
-      doc.removeEventListener("mousemove", ObjFn.start);
       doc.removeEventListener("mouseup", upFn);
+      doc.removeEventListener("mousemove", ObjFn.start);
       if (Utils.type(ObjFn.end) === "function") {
         ObjFn.end.call(_this,e);
       }
@@ -476,30 +566,31 @@
       if (!Drag.is) {
         Drag.is = true;
         emit("openCurtain");
+        emit("downing");
       } else {
         Drag.is = false;
         emit("closeCurtain");
         rulerLayout.clear();
+        emit("downed");
       }
     });
   };
   // 更新神奇的盒子
   DragClass.prototype.updateMagic = function () {
     var Drag = this;
-    var DragParams = Drag.params;
-    var curtain = Drag.params.curtain;
-    var len = DragParams.magic.length;
+    var params = Drag.params;
+    var curtain = params.curtain;
+    var len = params.magic.length;
     var i = 0;
-    var scaleIcon = doc.createElement("span");
-    scaleIcon.setAttribute("date-mode", "scaleMode");
-    scaleIcon.className = "scaleIcon";
-    scaleIcon.style.display = "none";
-    var obj = Object.create(null);
+    var scaleIcon;
     var top, left;
+    var height, width;
     var currentMagic;
     for (; i < len; i++) {
-      currentMagic = DragParams.magic[i].el;
-      if (DragParams.magic[i].collision) { // 初始 magic
+      currentMagic = params.magic[i].el;
+      
+      Drag.$.fn.addClass(currentMagic,'drag-child')
+      if (currentMagic.getAttribute('date-collision')) { // 初始 magic
         var key = constant.random();
         while (magicLayout[key]) {
           key = constant.random();
@@ -507,55 +598,88 @@
         currentMagic.setAttribute("date-key", key);
         top = currentMagic.offsetTop;
         left = currentMagic.offsetLeft;
+        height = currentMagic.offsetHeight;
+        width = currentMagic.offsetWidth;
         // 记录每个会发生碰撞的 magic 东，南，西，北
-        magicLayout[key] = Object.create(null);
-        obj["E"] = Drag.winWidth - left;
-        obj["S"] = Drag.winHeigth - top;
-        obj["W"] = left;
-        obj["N"] = top;
-        obj["moving"] = false;
-        Utils.extend(magicLayout[key], obj);
-        // Event.listener('BeforeCollision', function () {
-        // }.bing(this))
+        magicLayout[key] = {};
+        magicLayout[key].el = currentMagic;
+        magicLayout[key].moving = false;
+        magicLayout[key].E = Drag.winWidth - (left + width);
+        magicLayout[key].S = Drag.winHeight - (top + height);
+        magicLayout[key].W = left;
+        magicLayout[key].N = top;
       }
-      DragParams.scaleIcon[i] = scaleIcon;
-      currentMagic.appendChild(scaleIcon);
+      if (params.magic[i].scale) {
+        scaleIcon = doc.createElement("span");
+        scaleIcon.setAttribute("date-mode", "scaleMode");
+        scaleIcon.className = "scaleIcon";
+        scaleIcon.style.display = "none";
+        params.scaleIcon[i] = scaleIcon;
+        currentMagic.appendChild(scaleIcon)
+      }
     }
-    // 打开幕布，即按钮被点击
-    Event.listener("openCurtain", function () {
-      console.log(curtain);
-      var _Drag = this;
-      _Drag.$.fn.addClass(curtain, "openCurtain");
-      for (let i = 0; i < _Drag.params.magic.length; i++) {
-        _Drag.params.scaleIcon[i].style.display = "block";
-        _Drag.$.fn.addClass(_Drag.params.magic[i].el, "drag-child-dashed");
-      }
-    }.bind(Drag));
-    // 关闭幕布，再次点击按钮
-    Event.listener("closeCurtain", function () {
-      var _Drag = this;
-      _Drag.$.fn.removeClass(curtain, "openCurtain");
-      for (let i = 0; i < _Drag.params.magic.length; i++) {
-        _Drag.params.scaleIcon[i].style.display = "none";
-        _Drag.$.fn.removeClass(_Drag.params.magic[i].el, "drag-child-dashed");
-      }
-    }.bind(Drag));
-    Drag.$DragEl.addEventListener("mousedown", Drag.downProxy.bind(Drag));
+    
+
+    var EventFn = Drag.downProxy.bind(Drag);
+    if (Drag.params.button) {
+      // 打开幕布，即按钮被点击
+      Event.listener("openCurtain", function () {
+        var _Drag = this;
+        var params = _Drag.params;
+        var magicLen = params.magic.length;
+        var scaleIconLen = params.scaleIcon.length;
+        var magic = params.magic;
+        var scaleIcon = params.scaleIcon;
+        if (curtain) {
+          _Drag.$.fn.addClass(curtain, "openCurtain");
+        }
+        for (let i = 0; i < magicLen; i++) {
+          _Drag.$.fn.addClass(magic[i].el, "drag-child-dashed");
+        }
+        for (let i = 0; i < scaleIconLen; i++) {
+          scaleIcon[i].style.display = "block";
+        }
+      }.bind(Drag));
+      // 关闭幕布，再次点击按钮
+      Event.listener("closeCurtain", function () {
+        var _Drag = this;
+        var params = _Drag.params;
+        var magicLen = params.magic.length;
+        var scaleIconLen = params.scaleIcon.length;
+        var magic = params.magic;
+        var scaleIcon = params.scaleIcon;
+        if(curtain){
+          _Drag.$.fn.removeClass(curtain, "openCurtain");
+        }
+        
+        for (let i = 0; i < magicLen; i++) {
+          _Drag.$.fn.removeClass(magic[i].el, "drag-child-dashed");
+        }
+        for (let i = 0; i < scaleIconLen; i++) {
+          scaleIcon[i].style.display = "none";
+        }
+      }.bind(Drag));
+
+      Event.listener("downing", function () {
+        Drag.$DragEl.addEventListener("mousedown", EventFn);
+      }.bind(Drag));
+      Event.listener("downed", function () {
+        Drag.$DragEl.removeEventListener("mousedown", EventFn);
+      });
+    } else {
+      Drag.$DragEl.addEventListener("mousedown", EventFn);
+    }
   };
   // 更新标尺
   DragClass.prototype.updateRuler = function () {
     var DragClass = this;
     var top, left;
-    if (DragClass.params.ruler.top.nodeType === 1) {
+    if (DragClass.params.ruler.top) {
       top = DragClass.params.ruler.top;
-    } else if (DragClass.params.ruler.top.className.nodeType === 1) {
-      top = DragClass.params.ruler.top.className;
-    }
-    if (DragClass.params.ruler.left.nodeType === 1) {
+    } 
+    if (DragClass.params.ruler.left) {
       left = DragClass.params.ruler.left;
-    } else if (DragClass.params.ruler.left.className.nodeType === 1) {
-      left = DragClass.params.ruler.left.className;
-    }
+    } 
     if (top) {
       top.setAttribute("date-ruler", "origin");
       top.setAttribute("date-direction", "top");
@@ -566,6 +690,15 @@
         positionY: parseInt(win.getComputedStyle(top)["top"]),
         positionX: parseInt(win.getComputedStyle(top)["left"])
       });
+      if(DragClass.params.button){
+        top.style.display = "none";
+        Event.listener("downing", function () {
+          top.style.display = "block";
+        });
+        Event.listener("downed", function () {
+          top.style.display = "none";
+        });
+      }
     }
     if (left) {
       left.setAttribute("date-ruler", "origin");
@@ -577,10 +710,21 @@
         positionY: parseInt(win.getComputedStyle(left)["top"]),
         positionX: parseInt(win.getComputedStyle(left)["left"])
       });
+      if (DragClass.params.button) {
+        left.style.display = "none";
+
+        Event.listener("downing", function () {
+          left.style.display = "block";
+        });
+        Event.listener("downed", function () {
+          left.style.display = "none";
+        });
+      }
     }
   };
   // 自动贴附
   DragClass.prototype.updateAttach = function () {
+    
     var DragClass = this;
     var currentMagic = arguments[0],
       type = arguments[1],
@@ -622,7 +766,6 @@
       var $el = arguments[0], userParam = arguments[1];
       var Drag = this;
       Drag.$ = $;
-      Drag.Dom8 = new Dom8();
       Drag.$DragEl = $el;
       Drag.target = null;
       Drag.winHeight = win.innerHeight;
@@ -630,20 +773,16 @@
       Drag.uqdateDragParams(Drag.$DragEl, "$DragEl");
       // 默认参数
       var defaults1 = {
-        button: null,     // 按钮
-        magic: [],        // 只有拥有魔法的盒子才可以进行拖拽
-        grid: false,      // 是否开启网格
-        memory: false,    // 是否记住盒子的位置，也可以是一个数组，将需要记住盒子的类名传进来
-        scale: false,     // 是否开启缩放
-        noCross: true,    // 盒子拖放过程是否可以越过父元素
-        ruler: {},        // 是否开启标尺（仿ps）
-        curtain: null,    // 幕布 
-        scaleIcon: [],    // 缩放magic盒子的
-        restrict: false   // 将盒子的活动范围限制在 $DragEl 里
+        button: false,     // 按钮
+        magic: [],         // 只有拥有魔法的盒子才可以进行拖拽
+        mode: "free",      // 是否开启网格
+        ruler: false,         // 是否开启标尺（仿ps）
+        curtain: false,    // 幕布 
+        scaleIcon: [],     // 缩放magic盒子的
+        restrict: false    // 将盒子的活动范围限制在 $DragEl 里
       };
       // 在Drag上挂载所有的参数
       Drag.params = Utils.extend({}, defaults1, userParam);
-      console.log(Drag.params);
       // 初始化
       Drag.init();
       return Drag;
@@ -655,18 +794,20 @@
 
     Drag.prototype.init = function () {
       var self = this;
-      // btn
+      // btn init
       if (self.params.button) {
-        self.uqdateDragParams(self.params.button, "button");
-        self.uqdateDragParams(self.params.curtain, "curtain");
-        self.uqdateBtn();
+        Event.listener("uqdateBtn", function () {
+          self.uqdateBtn();
+        }.bind(self));
+        self.params.button && self.uqdateDragParams(self.params.button, "button");
+        self.params.curtain && self.uqdateDragParams(self.params.curtain, "curtain");
       }
-      // magic
+      // magic init 
       if (self.params.magic) {
         self.uqdateDragParams(self.params.magic, "magic");
         self.updateMagic();
       }
-      // ruler
+      // ruler init
       if (self.params.ruler) {
         self.uqdateDragParams(self.params.ruler, "ruler");
         self.updateRuler();
@@ -680,54 +821,52 @@
     Drag.prototype.uqdateDragParamsProxy = {
       $DragEl: function () {
         var params = arguments[0],
-          _this = this;
+            _this = this;
         _this.$DragEl = _this.$(params)[0];
-        _this.$DragEl.setAttribute("date-mode", params);
       },
       button: function () {
         var params = arguments[0],
-          _this = this;
+            _this = this;
         _this.params.button = _this.$(params)[0];
-        _this.params.button.setAttribute("date-mode", params);
+        emit("uqdateBtn");
       },
       magic: function () {
         var params = arguments[0],
-          _this = this;
-        for (var i = 0; i < params.length; i++) {
+            _this = this,
+            i = 0,
+            len = params.length
+        for ( ; i < len; i++) {
           _this.params.magic[i].el = _this.$(params[i].el)[0];
           _this.params.magic[i].el.setAttribute("date-mode", "magicMode");
           if (_this.params.magic[i].static) {
             _this.params.magic[i].el.setAttribute("date-state", "static");
           }
+          if (_this.params.magic[i].collision) {
+            _this.params.magic[i].el.setAttribute("date-collision", "collision");
+          }
         }
       },
       curtain: function () {
         var params = arguments[0],
-          _this = this;
+            _this = this;
         _this.params.curtain = _this.$(params)[0];
         _this.params.curtain.setAttribute("date-mode", "curtain");
       },
       ruler: function () {
         var params = arguments[0],
-          _this = this;
-        if (!_this.params.ruler.top.className) {
+            _this = this;
+        if (_this.params.ruler.top) {
           _this.params.ruler.top = _this.$(params.top)[0];
           _this.params.ruler.top.setAttribute("date-mode", "rulerMode");
-        } else {
-          _this.params.ruler.top.className = _this.$(params.top.className)[0];
-          _this.params.ruler.top.className.setAttribute("date-mode", "rulerMode");
-        }
-        if (!_this.params.ruler.left.className) {
+        } 
+        if (_this.params.ruler.left) {
           _this.params.ruler.left = _this.$(params.left)[0];
           _this.params.ruler.left.setAttribute("date-mode", "rulerMode");
-        } else {
-          _this.params.ruler.left.className = _this.$(params.left.className)[0];
-          _this.params.ruler.left.className.setAttribute("date-mode", "rulerMode");
         }
       }
     };
     return Drag;
   }());
-  // 挂载Drag、
-  return win.Drag = Drag;
+
+  return win.Drag = Drag
 })));

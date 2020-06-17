@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../package/css/drag.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    .box1{
+      width: 100px;
+      height: 100px;
+      background: #EC5463;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 0;
+    }
+    .box2{
+      width: 100px;
+      height: 100px;
+      background: #FFCF56;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 120px;
+    }
+    .box3{
+      width: 100px;
+      height: 100px;
+      background: #A3D071;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 240px;
+    }
+    .box4{
+      width: 100px;
+      height: 100px;
+      background: #49CFAE;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 360px;
+    }
+    .box5{
+      width: 100px;
+      height: 100px;
+      background: #4FC0E8;
+      font-size: 50px;
+      text-align: center;
+      line-height: 120px;
+      color: #fff;
+      left: 480px;
+    }
+    #drag{
+      width: 580px;
+      height: 200px;
+      position: relative;
+      left: 50%;
+      top: 200px;
+      margin-left: -350px;
+      text-align: center;
+      font-size: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div id="drag">
+    可以随意拖动以下盒子
+    <div class="drag-child1 box1">D</div>
+    <div class="drag-child2 box2">R</div>
+    <div class="drag-child3 box3">A</div>
+    <div class="drag-child4 box4">G</div>
+    <div class="drag-child5 box5">!</div>
+  </div>
+  <script src="../package/js/drag1.1.js"></script>
+  <script>
+    var drag = new Drag('#drag', {
+      magic: [
+        { el: ".drag-child1" },
+        { el: ".drag-child2" },
+        { el: ".drag-child3" },
+        { el: ".drag-child4" },
+        { el: ".drag-child5" }
+      ],
+    })
+  </script>
+</body>
+</html>
