@@ -2,7 +2,7 @@
 
 #### 造拽拽的轮子
 
-在参考了其他Drag组件库的一些做法之后，加上Photoshop中的标尺功能，分离为两个模式“Free mode”，“Grid mode”，另起炉灶，取名"Free and Grid Drag"（自由的和网格的 拖拽）
+在参考了其他Drag组件库的一些做法之后，加上Photoshop中的标尺功能，分离为两个模式“Free mode”，“Grid mode”，取名"Free and Grid Drag"（自由的和网格的 拖拽）
 
 欢迎Star
 
@@ -11,7 +11,7 @@
 - [x] 拖拽
 - [x] 标尺
 - [x] 静态
-- [ ] 碰撞
+- [x] 碰撞
 
 #### Grid Mode  正在开发中......
 - [ ] 缩放
