@@ -733,9 +733,11 @@
         scaleIcon = doc.createElement("span");
         scaleIcon.setAttribute("date-mode", "scaleMode");
         scaleIcon.className = "scaleIcon";
-        scaleIcon.style.display = "none";
         params.scaleIcon[i] = scaleIcon;
         currentMagic.appendChild(scaleIcon);
+        if (Drag.params.button) {
+          scaleIcon.style.display = "none";
+        }
       }
     }
 

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="../package/css/drag.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    .box1 {
+      width: 100px;
+      height: 100px;
+      background: #EC5463;
+      text-align: center;
+      line-height: 100px;
+      color: #fff;
+      left: 0;
+    }
+
+    .domeLink {
+      width: 300px;
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      margin-left: -150px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="drag">
+    可以随意缩放以下盒子
+    <div class="drag-child1 box1">Daniel Wu</div>
+  </div>
+  <div class="domeLink">
+    <div>
+      <a href="https://zhenganbin.github.io/FreeGrid-Drag/dome/drag.html">拖拽</a>
+    </div>
+    <div>
+      <a href="https://zhenganbin.github.io/FreeGrid-Drag/dome/drag-button.html">按钮</a>
+    </div>
+    <div>
+      <a href="https://zhenganbin.github.io/FreeGrid-Drag/dome/drag-scale.html">缩放</a>
+    </div>
+    <div>
+      <a href="https://zhenganbin.github.io/FreeGrid-Drag/dome/drag-ruler.html">标尺</a>
+    </div>
+    <div>
+      <a href="">静态</a>
+    </div>
+    <div>
+      <a href="https://zhenganbin.github.io/FreeGrid-Drag/dome/drag-collision.html">碰撞</a>
+    </div>
+  </div>
+  <script src="../package/js/drag1.1.js"></script>
+  <script>
+    var drag = new Drag('#drag', {
+      magic: [
+        { el: ".drag-child1", scale: true },
+      ],
+    })
+  </script>
+</body>
+
+</html>

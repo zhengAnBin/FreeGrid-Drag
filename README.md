@@ -13,7 +13,10 @@
 - [x] 静态
 - [x] 碰撞
 
+[dome](https://zhenganbin.github.io/FreeGrid-Drag/dome/drag.html)
+
 #### Grid Mode  正在开发中......
+
 - [ ] 缩放
 - [ ] 拖拽
 - [ ] 贴附
@@ -28,4 +31,8 @@
 如果你越读了源代码，发现其中有些代码很低效，请你务必告知，大家一起交流交流，
 
 也可以添加我的微信 an13229402136 
+
+#### 其他
+
+请阅读 [LOG](https://zhenganbin.github.io/FreeGrid-Drag/LOG.md)
 
